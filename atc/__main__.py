@@ -1,6 +1,6 @@
 import click
 import yaml
-from lib.db_actions import assert_db_initialized, nuke_db
+from utils.db_actions import assert_db_initialized, nuke_db
 import os
 
 @click.group()
