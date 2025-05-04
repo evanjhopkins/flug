@@ -2,7 +2,7 @@ import click
 import yaml
 import os
 from pony.orm import db_session
-from atc.utils.db_actions import Tasks
+from flug.utils.db_actions import Tasks
 
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True, dir_okay=False))
@@ -22,9 +22,9 @@ def start(file_path):
         print(f"[ATC] Task with namespace '{namespace}' is not registered.")
         return
 
-    if registered_task.started:
+    if registered_task.active:
         print(f"[ATC] Task '{namespace}' is already up.")
         return
 
-    registered_task.started = True
+    registered_task.active = True
     print(f"[ATC] Task '{namespace}' has been marked as up.")

@@ -6,7 +6,7 @@ db = Database()
 
 class Tasks(db.Entity):
     namespace = Required(str, unique=True)
-    started = Required(bool)
+    active = Required(bool)
     definition = Required(str)
     md5 = Required(str)
 

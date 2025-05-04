@@ -1,6 +1,6 @@
 import click
 import yaml
-from atc.utils.db_actions import assert_db_initialized, Tasks
+from flug.utils.db_actions import assert_db_initialized, Tasks
 import os
 import hashlib
 from pony.orm import db_session
@@ -26,4 +26,4 @@ def add(file_path):
     yaml_string = yaml.dump(data)
     yaml_hash = hashlib.md5(yaml_string.encode('utf-8')).hexdigest()
 
-    Tasks(namespace=namespace, started=0, definition=yaml_string, md5=yaml_hash)
+    Tasks(namespace=namespace, active=0, definition=yaml_string, md5=yaml_hash)

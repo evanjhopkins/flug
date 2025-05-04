@@ -1,6 +1,6 @@
 import click
-from atc.utils.db_actions import assert_db_initialized, nuke_db
-from atc.commands import add, list, remove, start, stop
+from flug.utils.db_actions import assert_db_initialized, nuke_db
+from flug.commands import add, list, remove, start, stop, update
 
 @click.group()
 def cli():
@@ -25,3 +25,4 @@ cli.add_command(list.list)
 cli.add_command(start.start)
 cli.add_command(remove.remove)
 cli.add_command(stop.stop)
+cli.add_command(update.update)

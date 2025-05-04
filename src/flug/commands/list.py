@@ -1,6 +1,6 @@
 import click
 import yaml
-from atc.utils.db_actions import assert_db_initialized, nuke_db, Tasks
+from flug.utils.db_actions import assert_db_initialized, nuke_db, Tasks
 from pony.orm import Database, Required, db_session, select
 # from tabulate import tabulate
 from rich.console import Console
@@ -20,15 +20,15 @@ def list():
     table = RichTable(show_header=True, header_style="bold",  box=None)
     table.add_column("ID")
     table.add_column("Namespace")
-    table.add_column("Is Up")
+    table.add_column("Active")
     # table.add_column("MD5")
 
     for t in tasks:
-        style = Style(color="green") if t.started else Style(color="grey50")
+        style = Style(color="green") if t.active else Style(color="grey50")
         table.add_row(
             str(t.id),
             t.namespace,
-            str(t.started),
+            str(t.active),
             # t.md5 or "",
             style=style
         )

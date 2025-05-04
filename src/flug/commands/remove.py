@@ -1,6 +1,6 @@
 import click
 import yaml
-from atc.utils.db_actions import Tasks
+from flug.utils.db_actions import Tasks
 import os
 from pony.orm import db_session
 
