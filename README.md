@@ -3,13 +3,13 @@ A Python based CLI tool for scheduling and orchestration of processes
 
 ## Quick start
 
-### 1. Install flug
+### Install flug
 It is generally recommended to install flug globally. You can install globally via pipx.
 ```
 pipx install flug
 ```
 
-### 2. Define your task
+### Define your task
 Create a yaml file in your project, such as my_task.atc.yaml. At a minimum, a flug task must specify a unique namespace, a command, and a schedule. There are many ways to define a schedule, but for this example, lets say we want to run the task every day at 1:00am.
 ```
 namespace: production.example.task
@@ -21,13 +21,13 @@ schedule:
         - 1:00:00
 ```
 
-### 3. Register the task
+### Register the task
 Flug needs to know your task exists. To do this, you can add your task to flug using the below command.
 ```
 flug add my_task.atc.yaml
 ```
 
-### 4. Verify your task
+### Verify your task
 Running `flug list` will show your task has indeed been added. You can run this command to view all registered flug tasks and some information about their status. We can see the working directory of the task defaulted to the location of our my_task.atc.yaml file. We also see that while the task has been added, it is disabled. A task will not run unless it is enabled.
 ```
 $> flug list
@@ -36,7 +36,7 @@ ID  Namespace                Enabled  Dir
 1   production.example.task  False    /home/user/code/test_project
 ```
 
-### 5. Enable your task.
+### Enable your task.
 A flug task has two states, enabled and disabled. In order for the scheduled executions to actually run, the task must be enabled.
 ```
 flug enable my_task.atc.yaml
@@ -53,4 +53,39 @@ $> flug list
 
 ID  Namespace                Enabled  Dir                     
 1   production.example.task  True     /home/user/code/test_project
+```
+
+Now this task is all set. It will run every day at 1pm.
+
+## Managing tasks
+
+### View all flug tasks
+Running `flug list` will show you all known flug task and if they are enabled.
+```
+$> flug list
+
+ID  Namespace                Enabled  Dir                     
+1   production.example.task  True     /home/user/code/test_project
+```
+
+### Disable your task
+If you want to stop your task from running, you can disabled it.
+```
+flug disable my_task.atc.yaml
+```
+It will remain registered with flug. So if you want it to start running again, simply enable
+```
+flug enable my_task.atc.yaml
+```
+
+### Update your task
+If you make changes to your task definition (the yaml file), flug will not automatically pick them up. You must tell flug to update the task.
+```
+flug update my_task.atc.yaml
+```
+
+### Delete your task
+If you want to totally remove your task from flug, you can run. 
+```
+flug remove my_task.atc.yaml
 ```
