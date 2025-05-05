@@ -15,8 +15,8 @@ def remove(file_path):
     namespace = data.get('namespace')
     registered_task = Tasks.get(namespace=namespace)
     if registered_task is None:
-        print("[ATC] Cannot remove a task that has not been registered.")
+        print("[FLUG] Cannot remove a task that has not been registered.")
         return
     
     registered_task.delete()
-    print("[ATC] removed task:", namespace)
+    print("[FLUG] removed task:", namespace)

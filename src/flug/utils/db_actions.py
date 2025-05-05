@@ -5,10 +5,11 @@ from pathlib import Path
 db = Database()
 
 class Tasks(db.Entity):
-    namespace = Required(str, unique=True)
-    active = Required(bool)
-    definition = Required(str)
-    md5 = Required(str)
+	namespace = Required(str, unique=True)
+	active = Required(bool)
+	definition = Required(str)
+	md5 = Required(str)
+	working_dir = Required(str)
 
 
 def get_storage_dir():
@@ -21,20 +22,9 @@ def get_db_path():
 
 def assert_db_initialized():
 	DB_PATH = get_db_path()
-
-	# print(f"[ATC] Persist path {DB_PATH}")
 	is_new = not os.path.exists(DB_PATH)
-	# print("is new?", is_new)
-
 	db.bind(provider='sqlite', filename=str(DB_PATH), create_db=True)
 	db.generate_mapping(create_tables=is_new)
-
-	# if is_new:
-	# 	print("[ATC] Initialization comlete")
-	# else:
-	# 	print("[ATC] db already exists")
-
-	# print("[ATC✈️] Ready!")
 
 
 @db_session

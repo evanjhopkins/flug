@@ -13,7 +13,7 @@ def list():
     tasks = select(t for t in Tasks)[:]
 
     if len(tasks) == 0:
-        print("[ATC] No tasks have been registered")
+        print("[FLUG] No tasks have been registered")
         return
 
     console = Console()
@@ -21,7 +21,7 @@ def list():
     table.add_column("ID")
     table.add_column("Namespace")
     table.add_column("Active")
-    # table.add_column("MD5")
+    table.add_column("Dir")
 
     for t in tasks:
         style = Style(color="green") if t.active else Style(color="grey50")
@@ -29,7 +29,7 @@ def list():
             str(t.id),
             t.namespace,
             str(t.active),
-            # t.md5 or "",
+            t.working_dir or "",
             style=style
         )
 
