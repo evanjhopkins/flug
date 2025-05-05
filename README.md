@@ -1,5 +1,10 @@
 # Flug - Flugsicherung
-A Python based CLI tool for scheduling and orchestration of processes
+A Python based CLI tool for managing scheduled process execution.
+
+Customizable - More control than cronjob
+File Based - Flug task are defined in yaml files. This allows
+- tasks to be colocated with their relevant codebase
+- portable and sharable - flug task can be included in repositories
 
 ## Quick start
 
