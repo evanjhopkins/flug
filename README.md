@@ -8,7 +8,7 @@ A Python based CLI tool for scheduling and orchestration of processes
 pipx install flug
 ```
 
-2) Define a yaml file in your project, such as my_task.atc.yaml
+2) Define a yaml file in your project, such as my_task.atc.yaml. At a minimum, a flug task must specify a unique namespace, a command, and a schedule. There are many ways to define a schedule, but for this example, lets say we want to run the task every day at 1:00am.
 ```
 namespace: production.example.task
 command:
@@ -19,12 +19,12 @@ schedule:
         - 1:00:00
 ```
 
-3) Add your task with Flug
+### 3) Add your task with Flug
 ```
 flug add my_task.atc.yaml
 ```
 
-4) Running `flug list` will show your task has indeed been added. You can run this command to view all registered flug tasks and some information about their status. We can see the working directory of the task defaulted to the location of our my_task.atc.yaml file. We also see that while the task has been added, it is not active. A task will not run unless it is active.
+### 4) Running `flug list` will show your task has indeed been added. You can run this command to view all registered flug tasks and some information about their status. We can see the working directory of the task defaulted to the location of our my_task.atc.yaml file. We also see that while the task has been added, it is not active. A task will not run unless it is active.
 ```
 $> flug list
 
@@ -32,7 +32,7 @@ ID  Namespace                Active  Dir
 1   production.example.task  False   /home/user/code/test_project
 ```
 
-5) Start your task.
+### 5) Start your task.
 ```
 flug start my_task.atc.yaml
 ```
