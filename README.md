@@ -1,4 +1,4 @@
-![flug banner](./banner.png)
+![flug banner](./banner.jpg)
 
 # Flug - Flugsicherung
 A Python based CLI tool for managing scheduled process execution.
