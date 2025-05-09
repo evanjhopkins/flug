@@ -6,21 +6,22 @@ from flug.utils.db_actions import Tasks
 import hashlib
 from pathlib import Path
 
+
 @click.command()
-@click.argument('file_path', type=click.Path(exists=True, dir_okay=False))
+@click.argument("file_path", type=click.Path(exists=True, dir_okay=False))
 @db_session
 def update(file_path):
     abs_path = Path(os.path.abspath(file_path))
     working_dir = str(abs_path.parent)
-    with open(abs_path, 'r') as f:
+    with open(abs_path, "r") as f:
         data = yaml.safe_load(f)
 
-    namespace = data.get('namespace')
-    working_dir_from_yaml = data.get('working_dir')
+    namespace = data.get("namespace")
+    working_dir_from_yaml = data.get("working_dir")
 
     if working_dir_from_yaml is not None:
         working_dir = working_dir_from_yaml
-    
+
     registered_task = Tasks.get(namespace=namespace)
 
     if registered_task is None:
@@ -28,7 +29,7 @@ def update(file_path):
         return
 
     yaml_string = yaml.dump(data)
-    yaml_hash = hashlib.md5(yaml_string.encode('utf-8')).hexdigest()
+    yaml_hash = hashlib.md5(yaml_string.encode("utf-8")).hexdigest()
     has_changes = yaml_hash != registered_task.md5
 
     if not has_changes:

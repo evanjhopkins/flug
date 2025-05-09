@@ -6,6 +6,7 @@ from flug.utils.general import get_storage_dir
 from flug.utils.logging import print_internal_log
 from rich import print
 
+
 @click.command()
 @db_session
 def status():
@@ -19,7 +20,7 @@ def status():
         color = "green" if elapsed_sec < 5 else "red"
         is_running = "YES" if elapsed_sec < 5 else "NO"
         colored_is_running = f"[{color}]{is_running}[/{color}]"
-        last_hb = hb.last.strftime('%Y-%m-%d %H:%M:%S')
+        last_hb = hb.last.strftime("%Y-%m-%d %H:%M:%S")
     print("Is Service Running:", colored_is_running)
     print("Last Heartbeat:", last_hb)
     print("Internal Storage:", storage_dir)
