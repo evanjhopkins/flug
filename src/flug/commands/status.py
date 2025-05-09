@@ -10,7 +10,7 @@ from rich import print
 @click.command()
 @db_session
 def status():
-    is_running = "NO"
+    colored_is_running = "NO"
     last_hb = "(none)"
     storage_dir = get_storage_dir()
 
