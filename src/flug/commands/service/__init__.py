@@ -28,13 +28,16 @@ def update_heartbeat(name: str):
     now = datetime.now()
     hb = HeartBeat.get(name=name)
     if hb:
-        print("update hb")
         hb.last = now
-        print(hb)
     else:
-        print("add hb")
         HeartBeat(name=name, last=now)
     commit()
+
+def build_ex_command(raw_cmd: list[str]):
+    cmd = (
+        " && ".join(raw_cmd) if isinstance(raw_cmd, tuple) else raw_cmd
+    )
+    return cmd
 
 
 @db_session
@@ -52,11 +55,13 @@ def get_scheduled_executions(now=datetime.now()):
             for time_str in time_of_day:
                 execute_at = time_str_to_dt(time_str, run_date)
                 if execute_at > now:
+                    raw_cmd = config.get("command", None)
+                    cmd = build_ex_command(raw_cmd)                    
                     ex = ScheduledExecution(
                         namespace=task.namespace,
                         execute_at=execute_at,
-                        cmd="",
-                        working_dir="",
+                        cmd=cmd,
+                        working_dir=task.working_dir,
                     )
                     executions.append(ex)
 
@@ -79,9 +84,7 @@ def get_scheduled_executions(now=datetime.now()):
                 ex_dt = curr
                 if ex_dt > now:
                     raw_cmd = config.get("command", None)
-                    cmd = (
-                        " && ".join(raw_cmd) if isinstance(raw_cmd, tuple) else raw_cmd
-                    )
+                    cmd = build_ex_command(raw_cmd)
                     ex = ScheduledExecution(
                         namespace=task.namespace,
                         execute_at=ex_dt,
