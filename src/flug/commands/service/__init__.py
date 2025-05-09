@@ -118,17 +118,20 @@ def service():
         ]
         if len(to_execute) > 0:
             for ex in to_execute:
-                log_file = ex.working_dir + "/.flug.log"
-                with open(log_file, "a", encoding="utf-8") as log:
-                    subprocess.run(
-                        ex.cmd,
-                        cwd=ex.working_dir,
-                        shell=True,
-                        stdout=log,
-                        stderr=log,
-                        text=True,
-                        check=True,
-                    )
+                try:
+                    log_file = ex.working_dir + "/.flug.log"
+                    with open(log_file, "a", encoding="utf-8") as log:
+                        subprocess.run(
+                            ex.cmd,
+                            cwd=ex.working_dir,
+                            shell=True,
+                            stdout=log,
+                            stderr=log,
+                            text=True,
+                            check=True,
+                        )
+                except:
+                    log_internal(f"{ex.namespace} FAILED")
 
         # after all executions for this tick, check if we have moved into the next day
         # if yes, we must rebuild the schedules
