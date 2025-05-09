@@ -1,24 +1,20 @@
 import click
 from flug.utils.db_actions import assert_db_initialized, nuke_db
-from flug.commands import add, list, remove, start, stop, update, service
-import time
+from flug.commands import add, list, remove, start, stop, update, service, status
+
 
 @click.group()
 def cli():
     # If this is the first run of ATC, we need to initialize the internal db
     assert_db_initialized()
 
-@click.command()
-def status():
-    click.echo("Status2")
 
 @click.command()
 def nuke():
     nuke_db()
 
 
-
-cli.add_command(status)
+cli.add_command(status.status)
 cli.add_command(nuke)
 cli.add_command(add.add)
 cli.add_command(list.list)

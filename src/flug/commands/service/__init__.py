@@ -1,11 +1,13 @@
 import click
-from flug.utils.db_actions import Tasks
-import time
-from pony.orm import db_session, select
+from flug.utils.db_actions import Tasks, HeartBeat
+from pony.orm import db_session, select, commit
 import yaml
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 import subprocess
+import time
+
+from flug.utils.logging import log_internal
 
 
 @dataclass
@@ -21,6 +23,20 @@ def time_str_to_dt(time_str: str, date_o):
     return datetime.combine(date_o, time_o)
 
 
+# @db_session
+def update_heartbeat(name: str):
+    now = datetime.now()
+    hb = HeartBeat.get(name=name)
+    if hb:
+        print("update hb")
+        hb.last = now
+        print(hb)
+    else:
+        print("add hb")
+        HeartBeat(name=name, last=now)
+    commit()
+
+
 @db_session
 def get_scheduled_executions(now=datetime.now()):
     run_date = now.date()
@@ -30,8 +46,6 @@ def get_scheduled_executions(now=datetime.now()):
     for task in tasks:
         config = yaml.safe_load(task.definition)
         schedule = config["schedule"]
-        print(task.namespace)
-        print(schedule)
 
         time_of_day = schedule.get("time_of_day", None)
         if time_of_day is not None:
@@ -77,8 +91,6 @@ def get_scheduled_executions(now=datetime.now()):
                     executions.append(ex)
                 curr += step
 
-            # print(first_dt, last_dt)
-
     # sort to be in time order
     sorted_executions = sorted(executions, key=lambda x: x.execute_at)
 
@@ -88,34 +100,39 @@ def get_scheduled_executions(now=datetime.now()):
 @click.command()
 @db_session
 def service():
-    print("[FLUG] Service started")
+    log_internal("Service started", print_in_console=True)
     scheduled_executions = get_scheduled_executions()
-    # print(scheduled_executions)
 
+    curr_date = datetime.now().date()
     while True:
-        now = datetime.now()
-
-        # print("tick:", now)
-        to_execute = [e for e in scheduled_executions if e.execute_at <= now]
-        scheduled_executions = [e for e in scheduled_executions if e.execute_at > now]
+        update_heartbeat("service")
+        tick_start_time = datetime.now()
+        to_execute = [
+            e for e in scheduled_executions if e.execute_at <= tick_start_time
+        ]
+        scheduled_executions = [
+            e for e in scheduled_executions if e.execute_at > tick_start_time
+        ]
         if len(to_execute) > 0:
             for ex in to_execute:
-                print("TO EXECUTE", ex.namespace)
-                print("CMD:", ex.cmd)
-            log_file = ex.working_dir + "/.flug.log"
-            with open(log_file, "a", encoding="utf-8") as log:
-                subprocess.run(
-                    ex.cmd,
-                    cwd=ex.working_dir,
-                    shell=True,
-                    stdout=log,
-                    stderr=log,
-                    text=True,
-                    check=True,
-                )
+                log_file = ex.working_dir + "/.flug.log"
+                with open(log_file, "a", encoding="utf-8") as log:
+                    subprocess.run(
+                        ex.cmd,
+                        cwd=ex.working_dir,
+                        shell=True,
+                        stdout=log,
+                        stderr=log,
+                        text=True,
+                        check=True,
+                    )
 
-        # print(to_execute)
-        # print("REMAINING")
-        # print(scheduled_executions)
-
+        # after all executions for this tick, check if we have moved into the next day
+        # if yes, we must rebuild the schedules
+        if tick_start_time.date() > curr_date:
+            scheduled_executions = get_scheduled_executions(tick_start_time)
+            curr_date = tick_start_time.date()
+            print(
+                f"Updating for next day, rebuilding schedules {tick_start_time.date()}"
+            )
         time.sleep(5)
