@@ -1,5 +1,5 @@
 import click
-from flug.utils.db_actions import Tasks
+from flug.utils.db_actions import Tasks, Run
 from pony.orm import db_session, select
 
 # from tabulate import tabulate
@@ -23,11 +23,25 @@ def list():
     table.add_column("Namespace")
     table.add_column("Active")
     table.add_column("Dir")
+    table.add_column("Last Run")
 
     for t in tasks:
+        last_run = Run.select(namespace=t.namespace).first()
+        last_run_time = "(none)"
+        if last_run is not None:
+            last_run_time = last_run.execution_time.strftime("%Y-%m-%d %H:%M:%S")       
+            post_fix = " (SUCC)" if last_run.status else " (FAIL)"
+            last_run_time += post_fix
+
+        
         style = Style(color="green") if t.active else Style(color="grey50")
         table.add_row(
-            str(t.id), t.namespace, str(t.active), t.working_dir or "", style=style
+            str(t.id),
+            t.namespace,
+            str(t.active),
+            t.working_dir or "",
+            last_run_time,
+            style=style
         )
 
     console.print(table)

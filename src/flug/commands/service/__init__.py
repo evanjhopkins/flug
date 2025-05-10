@@ -1,5 +1,5 @@
 import click
-from flug.utils.db_actions import Tasks, HeartBeat
+from flug.utils.db_actions import Tasks, HeartBeat, Run
 from pony.orm import db_session, select, commit
 import yaml
 from datetime import datetime, timedelta
@@ -46,6 +46,10 @@ def get_enabled_tasks_hash():
     hashes = [t.md5 for t in list(Tasks.select(lambda t: t.active))]
     return hashlib.md5("".join(hashes).encode("utf-8")).hexdigest()
 
+@db_session
+def log_run(namespace: str, execution_time: datetime, status: bool):
+    Run(namespace=namespace,execution_time=execution_time, status=status)
+    commit()
 
 @db_session
 def get_scheduled_executions(now=datetime.now()):
@@ -144,9 +148,10 @@ def service():
                             text=True,
                             check=True,
                         )
+                    log_run(ex.namespace, ex.execute_at, 1)
                 except subprocess.CalledProcessError as e:
                     log_internal(f"{ex.namespace} FAILED", print_in_console=True)
-
+                    log_run(ex.namespace, ex.execute_at, 0)
 
         curr_hash = get_enabled_tasks_hash()
         have_configs_changes = False

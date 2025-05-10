@@ -19,6 +19,11 @@ class HeartBeat(db.Entity):
     last = Required(datetime)
 
 
+class Run(db.Entity):
+    namespace = Required(str)
+    execution_time = Required(datetime)
+    status = Required(bool)
+
 def get_db_path():
     storage_path = get_storage_dir()
     storage_path.mkdir(parents=True, exist_ok=True)
