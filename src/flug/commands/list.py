@@ -11,9 +11,9 @@ from rich.style import Style
 @click.command()
 @db_session
 def list():
-    tasks = select(t for t in Tasks)[:]
+    tasks = Tasks.select()[:]
 
-    if len(tasks) == 0:
+    if tasks is None or len(tasks) == 0:
         print("[FLUG] No tasks have been registered")
         return
 
