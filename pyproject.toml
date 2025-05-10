@@ -1,5 +1,5 @@
 [project]
-dependencies = ["clicK", "pyyaml", "pony", "rich"]                              
+dependencies = ["click", "pyyaml", "pony", "rich", "croniter"]                              
 name = "flug"
 requires-python = ">= 3.11"
 scripts = { flug = "flug:cli" }

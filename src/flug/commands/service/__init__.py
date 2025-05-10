@@ -6,8 +6,9 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 import subprocess
 import time
-
+from croniter import croniter
 from flug.utils.logging import log_internal
+import hashlib
 
 
 @dataclass
@@ -23,7 +24,7 @@ def time_str_to_dt(time_str: str, date_o):
     return datetime.combine(date_o, time_o)
 
 
-# @db_session
+@db_session
 def update_heartbeat(name: str):
     now = datetime.now()
     hb = HeartBeat.get(name=name)
@@ -41,59 +42,73 @@ def build_ex_command(raw_cmd: list[str]):
 
 
 @db_session
+def get_enabled_tasks_hash():
+    hashes = [t.md5 for t in list(Tasks.select(lambda t: t.active))]
+    return hashlib.md5("".join(hashes).encode("utf-8")).hexdigest()
+
+
+@db_session
 def get_scheduled_executions(now=datetime.now()):
     run_date = now.date()
-    tasks = select(t for t in Tasks)[:]
+    tasks = Tasks.select()[:]
     executions = []
 
     for task in tasks:
         config = yaml.safe_load(task.definition)
-        schedule = config["schedule"]
+        ex_times = set()
+        cron = config.get("cron", None)
 
-        time_of_day = schedule.get("time_of_day", None)
-        if time_of_day is not None:
-            for time_str in time_of_day:
-                execute_at = time_str_to_dt(time_str, run_date)
-                if execute_at > now:
-                    raw_cmd = config.get("command", None)
-                    cmd = build_ex_command(raw_cmd)                    
-                    ex = ScheduledExecution(
-                        namespace=task.namespace,
-                        execute_at=execute_at,
-                        cmd=cmd,
-                        working_dir=task.working_dir,
+        if cron is not None:
+            end = now + timedelta(days=1)
+            it = croniter(cron, now)
+            next_time = it.get_next(datetime)
+            while next_time < end:
+                ex_times.add(next_time)
+                next_time = it.get_next(datetime)
+
+        schedule = config.get("schedule", None)
+        if schedule is not None:
+            # handle simple time of day
+            time_of_day = schedule.get("time_of_day", None)
+            if time_of_day is not None:
+                for time_str in time_of_day:
+                    execute_at = time_str_to_dt(time_str, run_date)
+                    if execute_at > now:
+                        ex_times.add(execute_at)
+                   
+            # handle start & end with interval
+            window_interval = schedule.get("window_interval", None)
+            if window_interval is not None:
+                first_str = window_interval.get("start", None)
+                last_str = window_interval.get("stop", None)
+                interval_sec = window_interval.get("interval_sec", None)
+                if any(x is None for x in (first_str, last_str, interval_sec)):
+                    print(
+                        f"[FLUG] Unable to use window_interval schedule for {task.namespace}, skipping."
                     )
-                    executions.append(ex)
+                    continue
 
-        window_interval = schedule.get("window_interval", None)
-        if window_interval is not None:
-            first_str = window_interval.get("start", None)
-            last_str = window_interval.get("stop", None)
-            interval_sec = window_interval.get("interval_sec", None)
-            if any(x is None for x in (first_str, last_str, interval_sec)):
-                print(
-                    f"[FLUG] Unable to use window_interval schedule for {task.namespace}, skipping."
-                )
-                continue
+                first_dt = time_str_to_dt(first_str, run_date)
+                last_dt = time_str_to_dt(last_str, run_date)
+                step = timedelta(seconds=interval_sec)
+                curr = first_dt
+                while curr <= last_dt:
+                    ex_dt = curr
+                    if ex_dt > now:
+                        ex_times.add(ex_dt)    
+                    curr += step
 
-            first_dt = time_str_to_dt(first_str, run_date)
-            last_dt = time_str_to_dt(last_str, run_date)
-            step = timedelta(seconds=interval_sec)
-            curr = first_dt
-            while curr <= last_dt:
-                ex_dt = curr
-                if ex_dt > now:
-                    raw_cmd = config.get("command", None)
-                    cmd = build_ex_command(raw_cmd)
-                    ex = ScheduledExecution(
-                        namespace=task.namespace,
-                        execute_at=ex_dt,
-                        cmd=cmd,
-                        working_dir=task.working_dir,
-                    )
-                    executions.append(ex)
-                curr += step
-
+        
+        raw_cmd = config.get("command", None)
+        cmd = build_ex_command(raw_cmd)
+        for ex_time in ex_times:
+            ex = ScheduledExecution(
+                namespace=task.namespace,
+                execute_at=ex_time,
+                cmd=cmd,
+                working_dir=task.working_dir,
+            )
+            executions.append(ex)
     # sort to be in time order
     sorted_executions = sorted(executions, key=lambda x: x.execute_at)
 
@@ -101,11 +116,10 @@ def get_scheduled_executions(now=datetime.now()):
 
 
 @click.command()
-@db_session
 def service():
     log_internal("Service started", print_in_console=True)
     scheduled_executions = get_scheduled_executions()
-
+    hash = get_enabled_tasks_hash()
     curr_date = datetime.now().date()
     while True:
         update_heartbeat("service")
@@ -130,15 +144,22 @@ def service():
                             text=True,
                             check=True,
                         )
-                except:
-                    log_internal(f"{ex.namespace} FAILED")
+                except subprocess.CalledProcessError as e:
+                    log_internal(f"{ex.namespace} FAILED", print_in_console=True)
+
+
+        curr_hash = get_enabled_tasks_hash()
+        have_configs_changes = False
+        if hash != curr_hash:
+            have_configs_changes = True
+            hash = curr_hash
 
         # after all executions for this tick, check if we have moved into the next day
         # if yes, we must rebuild the schedules
-        if tick_start_time.date() > curr_date:
+        if tick_start_time.date() > curr_date or have_configs_changes:
             scheduled_executions = get_scheduled_executions(tick_start_time)
             curr_date = tick_start_time.date()
             print(
-                f"Updating for next day, rebuilding schedules {tick_start_time.date()}"
+                f"Rebuilding schedules {str(tick_start_time)}"
             )
         time.sleep(5)

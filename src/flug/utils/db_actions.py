@@ -23,7 +23,6 @@ def get_db_path():
     storage_path = get_storage_dir()
     storage_path.mkdir(parents=True, exist_ok=True)
     db_dir = storage_path / "atc.db"
-    print(db_dir)
     return db_dir
 
 
