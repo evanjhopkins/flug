@@ -1,6 +1,6 @@
 import click
 from flug.utils.db_actions import Tasks, HeartBeat, Run, assert_db_initialized
-from pony.orm import db_session, commit
+from pony.orm import db_session, commit, rollback
 import yaml
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -9,6 +9,7 @@ import time
 from croniter import croniter
 from flug.utils.logging import log_internal
 import hashlib
+import concurrent.futures
 
 
 @dataclass
@@ -126,46 +127,54 @@ def service():
     scheduled_executions = get_scheduled_executions()
     hash = get_enabled_tasks_hash()
     curr_date = datetime.now().date()
-    while True:
-        update_heartbeat("service")
-        tick_start_time = datetime.now()
-        to_execute = [
-            e for e in scheduled_executions if e.execute_at <= tick_start_time
-        ]
-        scheduled_executions = [
-            e for e in scheduled_executions if e.execute_at > tick_start_time
-        ]
-        if len(to_execute) > 0:
-            for ex in to_execute:
-                try:
-                    log_file = ex.working_dir + "/.flug.log"
-                    with open(log_file, "a", encoding="utf-8") as log:
-                        subprocess.run(
-                            ex.cmd,
-                            cwd=ex.working_dir,
-                            shell=True,
-                            stdout=log,
-                            stderr=log,
-                            text=True,
-                            check=True,
-                        )
-                    log_run(ex.namespace, ex.execute_at, 1)
-                except subprocess.CalledProcessError as e:
-                    log_internal(f"{ex.namespace} FAILED", print_in_console=True)
-                    log_run(ex.namespace, ex.execute_at, 0)
 
-        curr_hash = get_enabled_tasks_hash()
-        have_configs_changes = False
-        if hash != curr_hash:
-            have_configs_changes = True
-            hash = curr_hash
+    def run_task(ex):
+        start_time = datetime.now()
+        try:
+            log_file = ex.working_dir + "/.flug.log"
+            with open(log_file, "a", encoding="utf-8") as log:
+                subprocess.run(
+                    ex.cmd,
+                    cwd=ex.working_dir,
+                    shell=True,
+                    stdout=log,
+                    stderr=log,
+                    text=True,
+                    check=True,
+                )
+            log_run(ex.namespace, start_time, 1)
+        except subprocess.CalledProcessError:
+            log_internal(f"{ex.namespace} FAILED", print_in_console=True)
+            log_run(ex.namespace, start_time, 0)
 
-        # after all executions for this tick, check if we have moved into the next day
-        # if yes, we must rebuild the schedules
-        if tick_start_time.date() > curr_date or have_configs_changes:
-            scheduled_executions = get_scheduled_executions(tick_start_time)
-            curr_date = tick_start_time.date()
-            print(
-                f"Rebuilding schedules {str(tick_start_time)}"
-            )
-        time.sleep(5)
+    try:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            while True:
+                update_heartbeat("service")
+                tick_start_time = datetime.now()
+                to_execute = [
+                    e for e in scheduled_executions if e.execute_at <= tick_start_time
+                ]
+                scheduled_executions = [
+                    e for e in scheduled_executions if e.execute_at > tick_start_time
+                ]
+                if to_execute:
+                    futures = [executor.submit(run_task, ex) for ex in to_execute]
+                    concurrent.futures.wait(futures)
+
+                curr_hash = get_enabled_tasks_hash()    
+                have_configs_changes = curr_hash != hash
+                if have_configs_changes:
+                    hash = curr_hash
+
+                if tick_start_time.date() > curr_date or have_configs_changes:
+                    scheduled_executions = get_scheduled_executions(tick_start_time)
+                    curr_date = tick_start_time.date()
+                    print(f"Rebuilding schedules {str(tick_start_time)}")
+
+    except KeyboardInterrupt:
+        log_internal("Service interrupted by user, exiting cleanly.", print_in_console=True)
+        try:
+            rollback()
+        except Exception:
+            pass

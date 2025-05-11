@@ -1,6 +1,6 @@
 import click
 from flug.utils.db_actions import Tasks, Run, assert_db_initialized
-from pony.orm import db_session
+from pony.orm import db_session, desc
 from rich.console import Console
 from rich.table import Table as RichTable
 from rich.style import Style
@@ -25,7 +25,10 @@ def list():
     table.add_column("Last Run")
 
     for t in tasks:
-        last_run = Run.select(namespace=t.namespace).first()
+        last_run = Run \
+            .select(namespace=t.namespace) \
+            .order_by(lambda r: desc(r.execution_time)) \
+            .first()
         last_run_time = "(none)"
         if last_run is not None:
             last_run_time = last_run.execution_time.strftime("%Y-%m-%d %H:%M:%S")       
