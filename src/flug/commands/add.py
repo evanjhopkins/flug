@@ -9,8 +9,9 @@ from pathlib import Path
 
 @click.command()
 @click.argument("file_path", type=click.Path(exists=True, dir_okay=False))
+@click.option("-e", "--enable", is_flag=True, help="Optional flag for enabling while adding a new task.")
 @db_session
-def add(file_path):
+def add(file_path, enable):
     assert_db_initialized()
     abs_path = Path(os.path.abspath(file_path))
     working_dir = str(abs_path.parent)
@@ -29,7 +30,7 @@ def add(file_path):
 
     Tasks(
         namespace=namespace,
-        active=0,
+        active=enable,
         definition=yaml_string,
         md5=yaml_hash,
         working_dir=working_dir,
