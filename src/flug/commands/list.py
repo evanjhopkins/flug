@@ -1,8 +1,6 @@
 import click
-from flug.utils.db_actions import Tasks, Run
-from pony.orm import db_session, select
-
-# from tabulate import tabulate
+from flug.utils.db_actions import Tasks, Run, assert_db_initialized
+from pony.orm import db_session
 from rich.console import Console
 from rich.table import Table as RichTable
 from rich.style import Style
@@ -11,6 +9,7 @@ from rich.style import Style
 @click.command()
 @db_session
 def list():
+    assert_db_initialized()
     tasks = Tasks.select()[:]
 
     if tasks is None or len(tasks) == 0:

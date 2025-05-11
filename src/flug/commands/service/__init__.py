@@ -1,6 +1,6 @@
 import click
-from flug.utils.db_actions import Tasks, HeartBeat, Run
-from pony.orm import db_session, select, commit
+from flug.utils.db_actions import Tasks, HeartBeat, Run, assert_db_initialized
+from pony.orm import db_session, commit
 import yaml
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -121,6 +121,7 @@ def get_scheduled_executions(now=datetime.now()):
 
 @click.command()
 def service():
+    assert_db_initialized()
     log_internal("Service started", print_in_console=True)
     scheduled_executions = get_scheduled_executions()
     hash = get_enabled_tasks_hash()

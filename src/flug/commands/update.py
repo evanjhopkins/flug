@@ -2,7 +2,7 @@ import click
 import yaml
 import os
 from pony.orm import db_session
-from flug.utils.db_actions import Tasks
+from flug.utils.db_actions import Tasks, assert_db_initialized
 import hashlib
 from pathlib import Path
 
@@ -11,6 +11,7 @@ from pathlib import Path
 @click.argument("file_path", type=click.Path(exists=True, dir_okay=False))
 @db_session
 def update(file_path):
+    assert_db_initialized()
     abs_path = Path(os.path.abspath(file_path))
     working_dir = str(abs_path.parent)
     with open(abs_path, "r") as f:

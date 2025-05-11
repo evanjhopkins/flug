@@ -1,5 +1,5 @@
 import click
-from flug.utils.db_actions import HeartBeat
+from flug.utils.db_actions import HeartBeat, assert_db_initialized
 from pony.orm import db_session
 from datetime import datetime
 from flug.utils.general import get_storage_dir
@@ -10,6 +10,7 @@ from rich import print
 @click.command()
 @db_session
 def status():
+    assert_db_initialized()   
     colored_is_running = "NO"
     last_hb = "(none)"
     storage_dir = get_storage_dir()
