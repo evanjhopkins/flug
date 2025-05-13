@@ -1,4 +1,5 @@
 import click
+from flug.utils.constants import LOG_FILE_POSTFIX
 from flug.utils.db_actions import Tasks, HeartBeat, Run, assert_db_initialized
 from pony.orm import db_session, commit, rollback
 import yaml
@@ -123,7 +124,7 @@ def get_scheduled_executions(now=datetime.now()):
 @click.command()
 def service():
     assert_db_initialized()
-    log_internal("Service started", print_in_console=True)
+    log_internal("FLUG Service started", print_in_console=True)
     scheduled_executions = get_scheduled_executions()
     hash = get_enabled_tasks_hash()
     curr_date = datetime.now().date()
@@ -131,7 +132,7 @@ def service():
     def run_task(ex):
         start_time = datetime.now()
         try:
-            log_file = ex.working_dir + "/.flug.log"
+            log_file = ex.working_dir + "/" + LOG_FILE_POSTFIX
             with open(log_file, "a", encoding="utf-8") as log:
                 subprocess.run(
                     ex.cmd,
@@ -173,7 +174,7 @@ def service():
                     print(f"Rebuilding schedules {str(tick_start_time)}")
 
     except KeyboardInterrupt:
-        log_internal("Service interrupted by user, exiting cleanly.", print_in_console=True)
+        log_internal("FLUG service stopped", print_in_console=True)
         try:
             rollback()
         except Exception:
