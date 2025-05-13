@@ -1,32 +1,23 @@
 import click
-import yaml
-import os
 from pony.orm import db_session
-from flug.utils.db_actions import Tasks, assert_db_initialized
+from flug.utils.db_actions import assert_db_initialized
+from flug.utils.messaging import FAILED_TO_RESOLVE_TASK
+from flug.utils.resolve_task import resolve_task
 
 
 @click.command()
-@click.argument("file_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("target", type=str)
 @db_session
-def disable(file_path):
+def disable(target):
     assert_db_initialized()
-    abs_path = os.path.abspath(file_path)
-    with open(abs_path, "r") as f:
-        data = yaml.safe_load(f)
-
-    namespace = data.get("namespace")
-    if not namespace:
-        print("[FLUG] No namespace found in the file.")
+    task = resolve_task(target)
+    if task is None:
+        print(FAILED_TO_RESOLVE_TASK)
         return
 
-    registered_task = Tasks.get(namespace=namespace)
-    if registered_task is None:
-        print(f"[FLUG] Task with namespace '{namespace}' is not registered.")
+    if not task.active:
+        print(f"[FLUG] Task '{task.namespace}' is already stopped.")
         return
 
-    if not registered_task.active:
-        print(f"[FLUG] Task '{namespace}' is already stopped.")
-        return
-
-    registered_task.active = False
-    print(f"[FLUG] Task '{namespace}' has been marked as stopped.")
+    task.active = False
+    print(f"[FLUG] Task '{task.namespace}' has been marked as stopped.")

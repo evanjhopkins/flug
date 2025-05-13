@@ -1,24 +1,19 @@
 import click
-import yaml
-from flug.utils.db_actions import Tasks, assert_db_initialized
-import os
+from flug.utils.db_actions import assert_db_initialized
 from pony.orm import db_session
+from flug.utils.messaging import FAILED_TO_RESOLVE_TASK
+from flug.utils.resolve_task import resolve_task
 
 
 @click.command()
-@click.argument("file_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("target", type=str)
 @db_session
-def remove(file_path):
+def remove(target):
     assert_db_initialized()
-    abs_path = os.path.abspath(file_path)
-    with open(abs_path, "r") as f:
-        data = yaml.safe_load(f)
-
-    namespace = data.get("namespace")
-    registered_task = Tasks.get(namespace=namespace)
-    if registered_task is None:
-        print("[FLUG] Cannot remove a task that has not been registered.")
+    task = resolve_task(target)
+    if task is None:
+        print(FAILED_TO_RESOLVE_TASK)
         return
 
-    registered_task.delete()
-    print("[FLUG] removed task:", namespace)
+    target.delete()
+    print("[FLUG] removed task:", target.namespace)
