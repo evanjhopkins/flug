@@ -1,5 +1,6 @@
 import click
-from flug.commands import add, disable, enable, list, remove, update, service, status, nuke, log
+from flug.commands import add, disable, enable, list, remove, update, status, nuke, log
+from flug.commands import service
 
 
 @click.group()

@@ -27,7 +27,7 @@ class Run(db.Entity):
 def get_db_path():
     storage_path = get_storage_dir()
     storage_path.mkdir(parents=True, exist_ok=True)
-    db_dir = storage_path / "atc.db"
+    db_dir = storage_path / "flug.db"
     return db_dir
 
 
