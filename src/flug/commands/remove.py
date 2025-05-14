@@ -13,7 +13,6 @@ def remove(target):
 
 @db_session
 def _internal(target):
-    assert_db_initialized()
     task = resolve_task(target)
     if task is None:
         print(FAILED_TO_RESOLVE_TASK)

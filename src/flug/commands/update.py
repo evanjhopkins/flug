@@ -16,7 +16,6 @@ def update(file_path):
 
 @db_session
 def _internal(file_path):
-    assert_db_initialized()
     abs_path = Path(os.path.abspath(file_path))
     working_dir = str(abs_path.parent)
     with open(abs_path, "r") as f:

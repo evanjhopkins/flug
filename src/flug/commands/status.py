@@ -15,7 +15,6 @@ def status():
 
 @db_session
 def _internal():
-    assert_db_initialized()   
     colored_is_running = "NO"
     last_hb = "(none)"
     storage_dir = get_storage_dir()
