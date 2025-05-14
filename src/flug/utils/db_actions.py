@@ -48,6 +48,6 @@ def nuke_db():
     DB_PATH = get_db_path()
     if os.path.exists(DB_PATH):
         os.remove(DB_PATH)
-        print(f"[ATC] Nuked DB")
+        print(f"[FLUG] Nuked DB")
     else:
-        print(f"[ATC] No DB to Nuke")
+        print(f"[FLUG] No DB to Nuke")
