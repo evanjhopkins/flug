@@ -31,11 +31,12 @@ def get_db_path():
     return db_dir
 
 
-def assert_db_initialized():
+def assert_db_initialized():    
     DB_PATH = get_db_path()
+    print(DB_PATH)
     is_new = not os.path.exists(DB_PATH)
     db.bind(provider="sqlite", filename=str(DB_PATH), create_db=True)
-    db.generate_mapping(create_tables=is_new)
+    db.generate_mapping(create_tables=True)
 
 
 @db_session

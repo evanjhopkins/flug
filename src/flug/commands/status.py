@@ -8,8 +8,13 @@ from rich import print
 
 
 @click.command()
-@db_session
 def status():
+    assert_db_initialized()   
+    _internal()
+
+
+@db_session
+def _internal():
     assert_db_initialized()   
     colored_is_running = "NO"
     last_hb = "(none)"

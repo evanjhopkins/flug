@@ -9,8 +9,12 @@ TAIL = 20
 
 @click.command()
 @click.argument("target", type=str)
-@db_session
 def log(target):
+    assert_db_initialized()
+    _internal(target)
+
+@db_session
+def _internal(target):
     assert_db_initialized()
     task = resolve_task(target)
     if task is None:

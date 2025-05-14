@@ -9,8 +9,13 @@ from pathlib import Path
 
 @click.command()
 @click.argument("file_path", type=click.Path(exists=True, dir_okay=False))
-@db_session
 def update(file_path):
+    assert_db_initialized()
+    _internal(file_path)
+
+
+@db_session
+def _internal(file_path):
     assert_db_initialized()
     abs_path = Path(os.path.abspath(file_path))
     working_dir = str(abs_path.parent)

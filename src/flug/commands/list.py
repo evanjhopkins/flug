@@ -7,9 +7,12 @@ from rich.style import Style
 
 
 @click.command()
-@db_session
 def list():
     assert_db_initialized()
+    _internal()
+
+@db_session
+def _internal():
     tasks = Tasks.select()[:]
 
     if tasks is None or len(tasks) == 0:

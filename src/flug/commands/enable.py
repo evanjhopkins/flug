@@ -7,9 +7,12 @@ from flug.utils.resolve_task import resolve_task
 
 @click.command()
 @click.argument("target", type=str)
-@db_session
 def enable(target):
     assert_db_initialized()
+    _internal(target)
+
+@db_session
+def _internal(target):
     task = resolve_task(target)
     if task is None:
         print(FAILED_TO_RESOLVE_TASK)
